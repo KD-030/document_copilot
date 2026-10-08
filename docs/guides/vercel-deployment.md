@@ -30,27 +30,26 @@ Backend:
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `DATABASE_URL` — Supabase direct or session-mode PostgreSQL connection.
-- `HF_TOKEN` — fine-grained Hugging Face token with Inference Providers access.
+- `GEMINI_API_KEY` — Gemini API key created in Google AI Studio.
 - `ALLOWED_EMAIL_DOMAINS` — comma-separated approved email domain(s). Adding
   `gmail.com` authorizes any authenticated Gmail account; use it only when that
   broad access is intentional.
 - `ALLOWED_ORIGINS` — the exact HTTPS origin of the deployed frontend.
 
-The backend model defaults are defined in `app/config.py`: chat uses Hugging
-Face Inference Providers, and embeddings use `BAAI/bge-small-en-v1.5` (384
-dimensions). Set `HF_TOKEN`, `HF_CHAT_MODEL`, and `HF_EMBEDDING_MODEL`
-consistently in local and Vercel environments. A different embedding model or
-dimension requires a database migration. Provider usage may consume Hugging
-Face credits.
+The backend model defaults are defined in `app/config.py`: chat uses
+`gemini-2.5-flash`, and embeddings use `gemini-embedding-001` (768 dimensions).
+Set `GEMINI_API_KEY` in local and Vercel environments. A different embedding
+model or dimension requires a database migration. Gemini's free tier has
+model-specific quotas; review Google's current pricing and data terms before
+sending non-public content.
 
 ## Current production status
 
-The hosted Supabase schema was migrated through `0004_persist_chat_turn`; the
-database contained zero documents and chunks at the last check. Migration
-`0005_huggingface_embeddings` switches vector storage and search to 384
-dimensions and refuses to run if chunks exist. Confirm the hosted database is
-still empty before applying it. This change does not make any Hugging Face
-inference requests.
+Migration `0005_huggingface_embeddings` sets the vector schema to 384
+dimensions. Migration `0006_gemini_embeddings` changes vector storage and
+search to 768 dimensions and refuses to run if chunks exist. Apply migrations
+only after confirming the database target; existing chunks require a corpus
+rebuild before switching embedding models.
 
 ## Supabase preparation
 
@@ -66,7 +65,7 @@ uv run alembic upgrade head
 
 Review the generated migration SQL and verify the database target before
 running the final command. Then ingest the checked-in sample manifest. This
-uses Hugging Face Inference Providers and may consume account credits:
+uses the configured Gemini API key and is subject to the model's free-tier quota:
 
 ```sh
 uv run python -m app.ingestion.ingest
@@ -80,6 +79,13 @@ production traffic.
 The directories are already linked to their separate Vercel projects. After
 setting the backend variables (including the intended frontend origin), deploy
 the backend first:
+
+In the `document-copilot-api` Vercel project, set **Root Directory** to
+`backend/` (Project Settings → Build and Deployment → Root Directory). The
+backend's `pyproject.toml` sets Vercel's entrypoint to `app.main:app`, which is
+resolved relative to that root. Do not deploy this project with the repository
+root as its root directory; the backend package imports assume `backend/` is
+the Python project root.
 
 ```sh
 cd backend
@@ -109,5 +115,5 @@ in backend `ALLOWED_ORIGINS`, update the backend variable and redeploy the API.
 6. Verify a second user cannot read or mutate the first user's chats.
 
 The local Vercel builds validate packaging only. They do not verify hosted
-secrets, Supabase migrations, ingested data, Hugging Face inference calls, or
+secrets, Supabase migrations, ingested data, Gemini inference calls, or
 production authentication.

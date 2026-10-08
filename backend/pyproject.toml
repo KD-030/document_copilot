@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["app"]
+packages = ["backend"]
 
 [tool.vercel]
 entrypoint = "app.main:app"

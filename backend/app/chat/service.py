@@ -13,6 +13,7 @@ from app.chat.repository import persist_chat_turn
 from app.chat.schemas import ChatTurnResponse, CitationRead
 from app.config import settings
 from app.grounding.validator import GroundingError, validate_answer
+from app.ingestion.embedder import InferenceRequestError
 from app.retrieval.models import SourcePassage
 from app.retrieval.retriever import retrieve_passages
 
@@ -49,8 +50,8 @@ async def stream_chat_turn(
     question: str,
 ) -> AsyncIterator[dict[str, Any]]:
     async with httpx.AsyncClient(
-        base_url="https://router.huggingface.co",
-        headers={"Authorization": f"Bearer {settings.hf_token}"},
+        base_url="https://generativelanguage.googleapis.com",
+        headers={"x-goog-api-key": settings.gemini_api_key},
         timeout=60,
     ) as inference:
         try:
@@ -111,11 +112,19 @@ async def stream_chat_turn(
             }
         except (
             httpx.HTTPError,
+            InferenceRequestError,
             OpenAIAPIError,
             ModelAPIError,
             UnexpectedModelBehavior,
         ) as exc:
-            raise AIServiceError("The answer service is unavailable") from exc
+            status = getattr(exc, "status_code", None)
+            if status == 429:
+                message = "Gemini quota or rate limit reached; wait before retrying."
+            elif status in {400, 401, 403}:
+                message = "Gemini rejected the request or API key; check Gemini API access and model configuration."
+            else:
+                message = "The Gemini answer service is unavailable."
+            raise AIServiceError(message) from exc
 
 
 async def answer_chat_turn(

@@ -43,7 +43,7 @@ uv run alembic revision --autogenerate -m "add document tables"
 Always review the generated migration. Add explicit operations for Supabase/Postgres features that autogenerate cannot reliably infer:
 
 - `create extension if not exists vector`
-- `vector(1536)` columns
+- `vector(768)` columns for `gemini-embedding-001`
 - generated `tsvector` columns
 - HNSW and GIN indexes
 - RLS enablement and policies
@@ -113,6 +113,21 @@ cd backend
 uv run python -m app.ingestion.ingest
 ```
 
-Ingestion requires a configured `DATABASE_URL` and `HF_TOKEN`. SEC filing
-HTML does not provide reliable printed page numbers, so citations use filing
-metadata, section title, source URL, and exact passage text.
+Copy `backend/.env.example` to `backend/.env` and create a Gemini API key in
+[Google AI Studio](https://aistudio.google.com/app/apikey). Set `GEMINI_API_KEY`
+there; keep it private and server-side. The configured chat model is
+`gemini-2.5-flash`; embeddings use `gemini-embedding-001` at 768 dimensions.
+Keep `GEMINI_EMBEDDING_DIMENSIONS=768` aligned with migration
+`0006_gemini_embeddings`. Chat uses Gemini's OpenAI-compatible API endpoint.
+Google's free tier has model-specific quotas, and Google may use free-tier data
+to improve its products; review current [pricing and data terms](https://ai.google.dev/gemini-api/docs/pricing)
+before sending non-public content.
+
+Ingestion requires a configured `DATABASE_URL` and `GEMINI_API_KEY`. The command
+prints how many filings were actually created. If an API request is rate limited
+or fails, fix the reported Gemini issue and rerun it: accession numbers
+already committed are skipped, and each document plus its chunks is committed
+atomically. SEC filing HTML does not provide reliable printed page numbers, so
+citations use filing metadata, section title, source URL, and exact passage text.
+After a nonzero ingestion count, ask a question answered by a filing and verify
+that the response citations point to the supporting passages.

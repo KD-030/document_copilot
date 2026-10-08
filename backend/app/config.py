@@ -19,14 +19,16 @@ class Settings(BaseSettings):
 
     database_url: str = Field(..., min_length=1, alias="DATABASE_URL")
 
-    hf_token: str = Field(..., min_length=1, alias="HF_TOKEN")
-    hf_chat_model: str = Field(
-        default="meta-llama/Llama-3.1-8B-Instruct", alias="HF_CHAT_MODEL"
+    gemini_api_key: str = Field(..., min_length=1, alias="GEMINI_API_KEY")
+    gemini_chat_model: str = Field(
+        default="gemini-2.5-flash", alias="GEMINI_CHAT_MODEL"
     )
-    hf_embedding_model: str = Field(
-        default="BAAI/bge-small-en-v1.5", alias="HF_EMBEDDING_MODEL"
+    gemini_embedding_model: str = Field(
+        default="gemini-embedding-001", alias="GEMINI_EMBEDDING_MODEL"
     )
-    hf_embedding_dimensions: int = Field(default=384, alias="HF_EMBEDDING_DIMENSIONS")
+    gemini_embedding_dimensions: int = Field(
+        default=768, alias="GEMINI_EMBEDDING_DIMENSIONS"
+    )
 
     allowed_origins: str = Field(
         default="http://localhost:5173", alias="ALLOWED_ORIGINS"

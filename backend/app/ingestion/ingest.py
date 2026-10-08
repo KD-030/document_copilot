@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database.models import Chunk, Document
 from app.ingestion.chunking import chunk_filing_text
-from app.ingestion.embedder import embed_texts
+from app.ingestion.embedder import InferenceRequestError, embed_texts
 from app.ingestion.parser import parse_filing_html
 
 COMPANY_NAMES = {
@@ -60,10 +60,11 @@ def load_manifest(manifest_path: Path) -> tuple[Path, FilingManifest]:
 async def ingest_manifest(manifest_path: Path) -> int:
     corpus_root, manifest = load_manifest(manifest_path)
     engine = create_engine(_database_url(), pool_pre_ping=True)
+    ingested_count = 0
     try:
         async with httpx.AsyncClient(
-            base_url="https://router.huggingface.co",
-            headers={"Authorization": f"Bearer {settings.hf_token}"},
+            base_url="https://generativelanguage.googleapis.com",
+            headers={"x-goog-api-key": settings.gemini_api_key},
             timeout=60,
         ) as client:
             for filing in manifest.filings:
@@ -95,8 +96,9 @@ async def ingest_manifest(manifest_path: Path) -> int:
                 embeddings = await embed_texts(
                     client,
                     [chunk.content for chunk in chunks],
-                    model=settings.hf_embedding_model,
-                    dimensions=settings.hf_embedding_dimensions,
+                    model=settings.gemini_embedding_model,
+                    dimensions=settings.gemini_embedding_dimensions,
+                    task_type="RETRIEVAL_DOCUMENT",
                 )
 
                 with Session(engine) as session, session.begin():
@@ -127,6 +129,7 @@ async def ingest_manifest(manifest_path: Path) -> int:
                             )
                         ]
                     )
+                ingested_count += 1
 
                 print(
                     f"Ingested {ticker} {filing.form} {filing.accession_number}: "
@@ -135,15 +138,20 @@ async def ingest_manifest(manifest_path: Path) -> int:
     finally:
         engine.dispose()
 
-    return len(manifest.filings)
+    return ingested_count
 
 
 def main() -> None:
     default_manifest = (
         Path(__file__).resolve().parents[3] / "data" / "downloads" / "manifest.json"
     )
-    count = asyncio.run(ingest_manifest(default_manifest))
-    print(f"Ingested {count} filing(s)")
+    try:
+        count = asyncio.run(ingest_manifest(default_manifest))
+    except InferenceRequestError as exc:
+        raise SystemExit(
+            f"Ingestion stopped: {exc} Re-run after the issue clears."
+        ) from exc
+    print(f"Created {count} filing(s) and their chunks")
 
 
 if __name__ == "__main__":

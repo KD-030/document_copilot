@@ -11,7 +11,7 @@ This file is the source of truth for any coding agent (Claude Code, Cursor, Code
 - **Retrieval:** Supabase `pgvector` + Postgres full-text search
 - **Auth:** Supabase Auth
 - **Hosting:** Vercel (separate backend and frontend projects)
-- **LLM + embeddings:** Hugging Face Inference Providers
+- **LLM + embeddings:** Google Gemini API
 
 Stack is locked unless explicitly changed. Don't propose alternatives without a stated reason.
 

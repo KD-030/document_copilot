@@ -38,8 +38,9 @@ async def retrieve_passages(
         await embed_texts(
             inference,
             [query],
-            model=settings.hf_embedding_model,
-            dimensions=settings.hf_embedding_dimensions,
+            model=settings.gemini_embedding_model,
+            dimensions=settings.gemini_embedding_dimensions,
+            task_type="RETRIEVAL_QUERY",
         )
     )[0]
     vector_text = "[" + ",".join(map(str, embedding)) + "]"

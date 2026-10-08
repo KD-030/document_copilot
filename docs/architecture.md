@@ -24,7 +24,7 @@ flowchart LR
         db[(Postgres<br/>chats, documents, chunks<br/>pgvector + full-text)]
     end
 
-    hf[Hugging Face Inference Providers<br/>LLM + embeddings]
+    gemini[Google Gemini API<br/>chat + embeddings]
     corpus[SEC filing corpus]
     ingestion[Ingestion pipeline<br/>download, parse, chunk, embed]
 
@@ -67,7 +67,7 @@ Backend:
 - FastAPI + Uvicorn
 - Pydantic v2 + pydantic-settings
 - PydanticAI for typed LLM orchestration
-- Hugging Face Inference Providers for generation and embeddings
+- Google Gemini API for generation and embeddings
 - Supabase Python client for server-side database access
 - SQLAlchemy models + Alembic migrations for schema management
 - Supabase `pgvector` for semantic search
@@ -190,7 +190,7 @@ Retrieval and grounding remain independent from PydanticAI. This keeps ingestion
 
 Document Copilot uses hybrid retrieval:
 
-1. Embed the user's query with the configured Hugging Face embedding model.
+1. Embed the user's query with the configured Gemini embedding model.
 2. Run a semantic search over `document_chunks.embedding` with `pgvector`.
 3. Run a lexical search over `document_chunks.search_vector` with Postgres full-text search.
 4. Fuse the two ranked lists in Python with Reciprocal Rank Fusion.
@@ -306,7 +306,7 @@ The workflow is:
 Normal tables and ordinary indexes should be represented in SQLAlchemy models where practical. The following should be written explicitly in migrations with `op.execute()` or carefully reviewed Alembic operations:
 
 - `create extension if not exists vector`
-- `vector(1536)` embedding columns if the SQLAlchemy type renderer is not sufficient
+- `vector(768)` embedding columns for `gemini-embedding-001` if the SQLAlchemy type renderer is not sufficient
 - generated `tsvector` columns
 - HNSW indexes for vector search
 - GIN indexes for full-text search and JSON metadata
@@ -359,7 +359,7 @@ Backend settings:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `ALLOWED_EMAIL_DOMAINS` (server-enforced comma-separated email-domain allow-list)
 - `DATABASE_URL` for Alembic and direct Postgres access
-- `HF_TOKEN`
+- `GEMINI_API_KEY`
 - `ALLOWED_ORIGINS`
 - embedding model name and dimensions
 

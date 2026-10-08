@@ -1,11 +1,11 @@
 # Project implementation checklist
 
 > The Vercel frontend and backend are deployed, and the hosted Supabase schema is
-> migrated through `0004_persist_chat_turn`. The backend is being switched from
-> OpenAI to Hugging Face Inference Providers. The hosted database had zero
-> documents and chunks at the last check; migration `0005_huggingface_embeddings`
-> and a Hugging Face token are still required before corpus ingestion and chat
-> validation. See the deployment guide for the handoff.
+> migrated through `0004_persist_chat_turn`. The backend now targets Gemini for
+> chat and embeddings; migration `0006_gemini_embeddings` and a `GEMINI_API_KEY`
+> are required before corpus ingestion and grounded chat validation. The most
+> recent ingestion attempt stopped on Hugging Face HTTP 402 before creating
+> documents or chunks. See the deployment guide for the handoff.
 
 ## Recommended execution order
 
@@ -64,7 +64,7 @@ Suggested order:
 - [x] Normalise company/filing metadata for consistent querying
 - [x] Chunk documents into passages suitable for retrieval
 - [ ] Store source page references, document IDs, and chunk metadata
-- [x] Generate embeddings for chunks via the configured Hugging Face embedding model (pipeline implemented; not run against live services)
+- [x] Generate embeddings for chunks via the configured Gemini embedding model (pipeline implemented; not run against live services)
 - [x] Write ingestion pipeline to insert documents + chunks into Supabase/Postgres
 - [ ] Validate a sample filing can be retrieved by document ID and chunk ID
 - [x] Build a repeatable ingestion script for future filing batches

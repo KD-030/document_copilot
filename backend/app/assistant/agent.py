@@ -36,10 +36,10 @@ def evidence_prompt(question: str, passages: Sequence[SourcePassage]) -> str:
 
 agent = Agent(
     OpenAIChatModel(
-        settings.hf_chat_model,
+        settings.gemini_chat_model,
         provider=OpenAIProvider(
-            base_url="https://router.huggingface.co/v1",
-            api_key=settings.hf_token,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+            api_key=settings.gemini_api_key,
         ),
     ),
     output_type=GroundedAnswer,

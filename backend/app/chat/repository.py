@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from supabase import AsyncClient
 
@@ -20,7 +20,7 @@ async def list_chats(client: AsyncClient) -> list[ChatRead]:
 async def create_chat(user: AuthenticatedUser, title: str | None) -> ChatRead:
     response = (
         await user.supabase.table("chats")
-        .insert({"user_id": str(user.id), "title": title})
+        .insert({"id": str(uuid4()), "user_id": str(user.id), "title": title})
         .select("id,title,created_at,updated_at")
         .execute()
     )
